@@ -92,7 +92,8 @@ struct thread
 
     /* added change here */
     int stored_priority;                 /* Given prortity to threads */
-    struct list_elem allelem;           /* List element for all threads list. */
+    int64_t sleep_ticks;                 /* number of sleeping ticks */ 
+    struct list_elem allelem;            /* List element for all threads list. */
 
     /* Shared between thread.c and synch.c. */
     struct list_elem elem;              /* List element. */
