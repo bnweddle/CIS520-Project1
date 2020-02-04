@@ -128,11 +128,11 @@ thread_set_next_wakeup(void)
    {
       return;
    }
-   struct list_elem *cur;
-   struct thread *T
+   struct list_elem *elem_cur;
+   struct thread *t;
    elem_cur = list_begin(&sleepers);
-   T = list_entry(elem_cur, struct thread, elem);
-   if(T->sleep_ticks>timer_ticks())
+   t = list_entry(elem_cur, struct thread, elem);
+   if(t->sleep_ticks>timer_ticks())
    {
       return;
    }
