@@ -128,18 +128,18 @@ thread_set_next_wakeup(void)
    {
       return;
    }
-   struct list_emem *cur;
-   struct thread *thrd
-   cur = list_begin(&sleepers);
-   thrd = list_entry(cur, struct thread, elem);
-   if(thrd->sleep_ticks>timer_ticks())
+   struct list_elem *cur;
+   struct thread *T
+   elem_cur = list_begin(&sleepers);
+   T = list_entry(elem_cur, struct thread, elem);
+   if(T->sleep_ticks>timer_ticks())
    {
       return;
    }
-   old_lvl = intr_disable();
-   list_remove(cur);
-   thread_unblock(thrd);
-   intr_set_level(old_lvl);
+   old_level = intr_disable();
+   list_remove(elem_cur);
+   thread_unblock(T);
+   intr_set_level(old_level);
 }
 
 /* Initializes the threading system by transforming the code
