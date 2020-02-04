@@ -91,7 +91,7 @@ struct thread
     
 
     /* added change here */
-    int given_priority;                 /* Given prortity to threads */
+    int stored_priority;                 /* Given prortity to threads */
     struct list_elem allelem;           /* List element for all threads list. */
 
     /* Shared between thread.c and synch.c. */
