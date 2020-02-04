@@ -140,7 +140,7 @@ thread_set_next_wakeup(void)
    }
    old_level = intr_disable();
    list_remove(elem_cur);
-   thread_unblock(T);
+   thread_unblock(t);
    intr_set_level(old_level);
 }
 
