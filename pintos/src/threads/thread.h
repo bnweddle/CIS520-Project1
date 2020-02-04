@@ -144,6 +144,9 @@ void thread_priority_restore (void);
 void thread_block_till (int64_t);
 void thread_set_next_wakeup (void);
 
+bool compare(struct list_elem*, struct list_elem*, void*);
+bool compare_ticks(struct list_elem*, struct list_elem*, void*);
+
 int thread_get_nice (void);
 void thread_set_nice (int);
 int thread_get_recent_cpu (void);
