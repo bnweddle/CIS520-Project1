@@ -71,6 +71,62 @@ static void schedule (void);
 void thread_schedule_tail (struct thread *prev);
 static tid_t allocate_tid (void);
 
+void
+thread_priority_temporarily_up(void)
+{
+   struct thread *cur = thread_current();
+   cur->stored_priority = cur->priority;
+   cur->priority = 63;
+   return;
+}
+
+void
+thread_priority_restore(void)
+{
+   struct thread *cur = thread_current();
+   cur->priority = cur->stored_priority;
+   return;
+}
+
+void
+thread_block_till(int64_t wakeup)
+{
+   enum intr_level old_level;
+   struct thread *cur = thread_current();
+   if(wakeup<=0)
+   {
+      return;
+   }
+   ASSERT(cur->status == THREAD_RUNNING);
+   cur->sleep_ticks = wakeup;
+   old_level = intr_disable();
+   list_insert_ordered(&sleepers,&cur->elem,compare_ticks,NULL);
+   thread_block();
+   intr_set_level(old_level);
+}
+
+void
+thread_set_next_wakeup(void)
+{
+   enum intr_level old_level;
+   if(list_empty(&sleepers))
+   {
+      return;
+   }
+   struct list_emem *cur;
+   struct thread *thrd
+   cur = list_begin(&sleepers);
+   thrd = list_entry(cur, struct thread, elem);
+   if(thrd->sleep_ticks>timer_ticks())
+   {
+      return;
+   }
+   old_lvl = intr_disable();
+   list_remove(cur);
+   thread_unblock(thrd);
+   intr_set_level(old_lvl);
+}
+
 /* Initializes the threading system by transforming the code
    that's currently running into a thread.  This can't work in
    general and it is possible in this case only because loader.S
