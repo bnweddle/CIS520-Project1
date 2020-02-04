@@ -88,6 +88,21 @@ thread_priority_restore(void)
    return;
 }
 
+bool
+compare(struct list_elem *a,struct list_elem *b,void *AUX UNUSED){
+struct thread *ptra=list_entry(a,struct thread,elem);
+struct thread *ptrb=list_entry(b,struct thread,elem);
+return ptra->priority>ptrb->priority;
+}
+
+bool
+compare_ticks(struct list_elem *a,struct list_elem *b,void *AUX UNUSED)
+{
+  struct thread *ptra = list_entry(a,struct thread,elem);
+  struct thread *ptrb = list_entry(b,struct thread,elem);
+  return ptra->sleep_ticks<ptrb->sleep_ticks;
+}
+
 void
 thread_block_till(int64_t wakeup)
 {
