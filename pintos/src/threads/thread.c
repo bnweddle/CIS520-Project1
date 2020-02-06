@@ -85,7 +85,7 @@ thread_priority_temporarily_up(void)
 void
 thread_priority_restore(void)
 {
-   struct thread *ptr=thread_current();
+   struct thread *ptr = thread_current();
    ptr->priority = ptr->stored_priority;
    return;
 }
@@ -207,9 +207,9 @@ thread_tick (void)
   else
     kernel_ticks++;
 
-  /* Enforce preemption. */
-  if (++thread_ticks >= TIME_SLICE)
-    intr_yield_on_return ();
+    thread_set_next_wakeup();
+    if(++thread_ticks >= TIME_SLICE)
+        intr_yield_on_return();
 }
 
 /* Prints thread statistics. */
@@ -244,6 +244,7 @@ thread_create (const char *name, int priority,
   struct switch_entry_frame *ef;
   struct switch_threads_frame *sf;
   tid_t tid;
+  enum intr_level old_level;
 
   ASSERT (function != NULL);
 
@@ -255,6 +256,7 @@ thread_create (const char *name, int priority,
   /* Initialize thread. */
   init_thread (t, name, priority);
   tid = t->tid = allocate_tid ();
+  old_level = intr_disable();
 
   /* Stack frame for kernel_thread(). */
   kf = alloc_frame (t, sizeof *kf);
@@ -271,8 +273,15 @@ thread_create (const char *name, int priority,
   sf->eip = switch_entry;
   sf->ebp = 0;
 
+  intr_set_level(old_level);
+
   /* Add to run queue. */
   thread_unblock (t);
+
+  if(t->priority>thread_current()->priority)
+  {
+    thread_yield_current(thread_current());
+  }
 
   return tid;
 }
