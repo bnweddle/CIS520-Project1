@@ -22,8 +22,9 @@ typedef int tid_t;
 /* Thread priorities. */
 #define PRI_MIN 0                       /* Lowest priority. */
 #define PRI_DEFAULT 31                  /* Default priority. */
+#define PRIORITY_FAKE -1		/* not a real priority value*/
 #define PRI_MAX 63                      /* Highest priority. */
-
+#define LOCK_LEVEL 8			/* Cap on nested locks */
 /* A kernel thread or user process.
 
    Each thread structure is stored in its own 4 kB page.  The
@@ -105,7 +106,14 @@ struct thread
 
     /* Owned by thread.c. */
     unsigned magic;                     /* Detects stack overflow. */
-  };
+  bool is_donated;
+  struct lock *lock_blocked_by;
+  struct list locks;
+  int child_load_status;
+  struct list children;
+  int nice;
+  int recent_cpu;
+ };
 
 /* If false (default), use round-robin scheduler.
    If true, use multi-level feedback queue scheduler.

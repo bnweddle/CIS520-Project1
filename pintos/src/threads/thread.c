@@ -277,21 +277,17 @@ thread_create (const char *name, int priority,
 
   /* Add to run queue. */
   thread_unblock (t);
-<<<<<<< HEAD
 
   if(t->priority>thread_current()->priority)
   {
     thread_yield_current(thread_current());
   }
 
-=======
- 
  if(t->priority>thread_current()->priority)
   {
     thread_yield_current(thread_current());
     //thread_yield();
   }
->>>>>>> 79a6e76cc5e07db9b1bb25ace252ddd0076725dc
   return tid;
 }
 
@@ -576,11 +572,18 @@ init_thread (struct thread *t, const char *name, int priority)
   strlcpy (t->name, name, sizeof t->name);
   t->stack = (uint8_t *) t + PGSIZE;
   t->priority = priority;
+  t->stored_priority = priority;
+  t->is_donated=false;
+  list_init(&t->locks);
+  t->lock_blocked_by = NULL;
   t->magic = THREAD_MAGIC;
-
-  old_level = intr_disable ();
+  #ifdef USERPROG
+    t->child_load_status = 0;
+    lock_init(&t->lock_child);
+    cond_lock(&t->cond_child);
+    list_init(&t->children);
+  #endif
   list_push_back (&all_list, &t->allelem);
-  intr_set_level (old_level);
 }
 
 /* Allocates a SIZE-byte frame at the top of thread T's stack and
