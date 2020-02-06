@@ -76,17 +76,17 @@ static tid_t allocate_tid (void);
 void
 thread_priority_temporarily_up(void)
 {
-   struct thread *cur = thread_current();
-   cur->stored_priority = cur->priority;
-   cur->priority = 63;
+   struct thread *ptr = thread_current();
+   ptr->stored_priority = ptr->priority;
+   ptr->priority = 63;
    return;
 }
 
 void
 thread_priority_restore(void)
 {
-   struct thread *cur = thread_current();
-   cur->priority = cur->stored_priority;
+   struct thread *ptr=thread_current();
+   ptr->priority = ptr->stored_priority;
    return;
 }
 
@@ -310,7 +310,8 @@ thread_unblock (struct thread *t)
 
   old_level = intr_disable ();
   ASSERT (t->status == THREAD_BLOCKED);
-  list_push_back (&ready_list, &t->elem);
+  //list_push_back (&ready_list, &t->elem);
+  list_insert_ordered(&ready_list,&t->elem,compare,NULL);
   t->status = THREAD_READY;
   intr_set_level (old_level);
 }

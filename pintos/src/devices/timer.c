@@ -93,10 +93,10 @@ timer_sleep (int64_t ticks)
   int64_t wakeup_at = start + ticks;
 
   ASSERT (intr_get_level () == INTR_ON);
-  	thread_priority_temporarily_up();
-	thread_block_till(wakeup_at);
-	thread_set_next_wakeup();
-	thread_priority_restore();
+  thread_priority_temporarily_up();
+  thread_block_till(wakeup_at);
+  thread_set_next_wakeup();
+  thread_priority_restore();
 }
 
 /* Sleeps for approximately MS milliseconds.  Interrupts must be
