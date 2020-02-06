@@ -273,9 +273,36 @@ thread_create (const char *name, int priority,
 
   /* Add to run queue. */
   thread_unblock (t);
-
+ 
+ if(t->priority>thread_current()->priority)
+  {
+    thread_yield_current(thread_current());
+    //thread_yield();
+  }
   return tid;
 }
+
+void
+thread_yield_current (struct thread *cur)
+{
+  ASSERT (is_thread (cur));
+  enum intr_level old_level;
+
+  ASSERT (!intr_context ());
+
+  old_level = intr_disable ();
+  if (cur != idle_thread) {
+    /* For PRIORITY propose
+     * Change the ready_list to an ordered list in order to make sure that
+     * the thread with highest priority in the ready list get run first
+     */
+    list_insert_ordered(&ready_list, &cur->elem, compare, NULL);
+  }
+  cur->status = THREAD_READY;
+  schedule ();
+  intr_set_level (old_level);
+}
+
 
 /* Puts the current thread to sleep.  It will not be scheduled
    again until awoken by thread_unblock().
