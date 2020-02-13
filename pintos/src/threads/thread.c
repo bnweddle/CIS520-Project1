@@ -98,6 +98,13 @@ return ptra->priority>ptrb->priority;
 }
 
 bool
+invcompare(struct list_elem *a,struct list_elem *b,void *AUX UNUSED){
+struct thread *ptra=list_entry(a,struct thread,elem);
+struct thread *ptrb=list_entry(b,struct thread,elem);
+return ptra->priority<ptrb->priority;
+}
+
+bool
 compare_ticks(struct list_elem *a,struct list_elem *b,void *AUX UNUSED)
 {
   struct thread *ptra = list_entry(a,struct thread,elem);
@@ -198,19 +205,40 @@ thread_given_set_priority (struct thread *cur, int new_priority,
   intr_set_level (old_level);
 }
 
-/* Initializes the threading system by transforming the code
-   that's currently running into a thread.  This can't work in
-   general and it is possible in this case only because loader.S
-   was careful to put the bottom of the stack at a page boundary.
+void
+thread_sleep(int64_t ticks)
+{
+   /* get current time ticks
+   * set ticks in thread structe
+   * put thread into sleep queue
+   * turn interupts off
+   * put to block state
+   */
+  enum intr_level old_level; // In order to reset the interputs state afterward
 
-   Also initializes the run queue and the tid lock.
+  /* Get current thread */
+  struct thread *cur = thread_current ();
+  /* Ask to sleep for 0 ticks */
+  if (ticks <= 0)
+    return;
 
-   After calling this function, be sure to initialize the page
-   allocator before trying to create any threads with
-   thread_create().
+  ASSERT(cur->status == THREAD_RUNNING);
 
-   It is not safe to call thread_current() until this function
-   finishes. */
+  /* Get and set time ticks*/
+  cur->sleep_ticks = ticks + timer_ticks ();
+  /* Turn interupts off before operating on the current thread */
+  old_level = intr_disable ();
+  /* Put the thread into a sleep queue, whose element's sleep_ticks is in
+   * ascending order */
+  list_insert_ordered (&sleepers, &cur->elem, compare_ticks, NULL);
+
+  /* Block the thread*/
+  thread_block ();
+  /* Reset the interupts according to its level before turning off*/
+  intr_set_level (old_level);
+}
+//end change
+
 void
 thread_init (void) 
 {
@@ -226,6 +254,20 @@ thread_init (void)
   initial_thread->status = THREAD_RUNNING;
   initial_thread->tid = allocate_tid ();
 }
+
+/* Initializes the threading system by transforming the code
+   that's currently running into a thread.  This can't work in
+   general and it is possible in this case only because loader.S
+   was careful to put the bottom of the stack at a page boundary.
+
+   Also initializes the run queue and the tid lock.
+
+   After calling this function, be sure to initialize the page
+   allocator before trying to create any threads with
+   thread_create().
+
+   It is not safe to call thread_current() until this function
+   finishes. */
 
 /* Starts preemptive thread scheduling by enabling interrupts.
    Also creates the idle thread. */
@@ -462,7 +504,6 @@ thread_exit (void)
 
 /* Yields the CPU.  The current thread is not put to sleep and
    may be scheduled again immediately at the scheduler's whim. */
-void
 thread_yield (void) 
 {
   struct thread *cur = thread_current ();
@@ -472,7 +513,8 @@ thread_yield (void)
 
   old_level = intr_disable ();
   if (cur != idle_thread) 
-    list_push_back (&ready_list, &cur->elem);
+    list_insert_ordered(&ready_list,&cur->elem,compare,NULL);
+    // list_push_back (&ready_list, &cur->elem);
   cur->status = THREAD_READY;
   schedule ();
   intr_set_level (old_level);
@@ -499,7 +541,7 @@ thread_foreach (thread_action_func *func, void *aux)
 void
 thread_set_priority (int new_priority) 
 {
-  thread_current ()->priority = new_priority;
+  thread_given_set_priority (thread_current (), new_priority, false);
 }
 
 /* Returns the current thread's priority. */
@@ -630,6 +672,25 @@ init_thread (struct thread *t, const char *name, int priority)
   t->is_donated=false;
   list_init(&t->locks);
   t->lock_blocked_by = NULL;
+  if (thread_mlfqs)
+    {
+      /* The initial thread starts with a nice value of zero. Other threads
+       * start with a nice value inherited from their parent thread
+       */
+      /* The initial value of recent_cpu is 0 in the first thread created,
+       * or the parent's value in other new threads.
+       */
+      if (t == initial_thread)
+        {
+          t->nice = NICE_DEFAULT;
+          t->recent_cpu = RECENT_CPU_BEGIN;
+        }
+      else
+        {
+          t->nice = thread_get_nice ();
+          t->recent_cpu = thread_get_recent_cpu ();
+        }
+  }
   t->magic = THREAD_MAGIC;
   #ifdef USERPROG
     t->child_load_status = 0;

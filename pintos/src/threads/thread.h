@@ -25,6 +25,8 @@ typedef int tid_t;
 #define PRIORITY_FAKE -1		/* not a real priority value*/
 #define PRI_MAX 63                      /* Highest priority. */
 #define LOCK_LEVEL 8			/* Cap on nested locks */
+#define NICE_DEFAULT 0
+#define RECENT_CPU_BEGIN 0
 /* A kernel thread or user process.
 
    Each thread structure is stored in its own 4 kB page.  The
@@ -105,7 +107,7 @@ struct thread
 #endif
 
     /* Owned by thread.c. */
-    unsigned magic;                     /* Detects stack overflow. */
+  unsigned magic;                     /* Detects stack overflow. */
   bool is_donated;
   struct lock *lock_blocked_by;
   struct list locks;
@@ -138,7 +140,7 @@ const char *thread_name (void);
 
 void thread_exit (void) NO_RETURN;
 void thread_yield (void);
-void thread_yield_current(struct thread *cur);
+void thread_yield_current(struct thread *cur); // added
 
 /* Performs some operation on thread t, given auxiliary data AUX. */
 typedef void thread_action_func (struct thread *t, void *aux);
@@ -155,11 +157,13 @@ void thread_set_next_wakeup (void);
 
 bool compare(struct list_elem*, struct list_elem*, void*);
 bool compare_ticks(struct list_elem*, struct list_elem*, void*);
+bool invcompare(struct list_elem*, struct list_elem*, void*);
 
 int thread_get_nice (void);
 void thread_set_nice (int);
 int thread_get_recent_cpu (void);
 int thread_get_load_avg (void);
 void thread_given_set_priority(struct thread*,int,bool);
-
+void thead_sleep(int64_t); // added
 #endif /* threads/thread.h */
+
