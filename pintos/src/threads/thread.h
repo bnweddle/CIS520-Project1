@@ -23,6 +23,7 @@ typedef int tid_t;
 #define PRI_MIN 0                       /* Lowest priority. */
 #define PRI_DEFAULT 31                  /* Default priority. */
 #define PRIORITY_FAKE -1		/* not a real priority value*/
+#define PRIORITY_FAKE -1		/* not a real priority value*/
 #define PRI_MAX 63                      /* Highest priority. */
 #define LOCK_LEVEL 8			/* Cap on nested locks */
 #define NICE_DEFAULT 0
@@ -144,6 +145,7 @@ void thread_yield_current(struct thread *cur); // added
 
 /* Performs some operation on thread t, given auxiliary data AUX. */
 typedef void thread_action_func (struct thread *t, void *aux);
+void thread_yield_current(struct thread *cur); // added
 void thread_foreach (thread_action_func *, void *);
 
 int thread_get_priority (void);
@@ -152,6 +154,16 @@ void thread_set_priority (int);
 /* Added Methods for timer_sleep*/
 void thread_priority_temporarily_up (void);
 void thread_priority_restore (void);
+/* Added Methods for timer_sleep*/
+void thread_priority_temporarily_up (void);
+void thread_priority_restore (void);
+void thread_block_till (int64_t);
+void thread_set_next_wakeup (void);
+
+bool compare(struct list_elem*, struct list_elem*, void*);
+bool compare_ticks(struct list_elem*, struct list_elem*, void*);
+bool invcompare(struct list_elem*, struct list_elem*, void*);
+
 void thread_block_till (int64_t);
 void thread_set_next_wakeup (void);
 
@@ -166,4 +178,5 @@ int thread_get_load_avg (void);
 void thread_given_set_priority(struct thread*,int,bool);
 void thead_sleep(int64_t); // added
 #endif /* threads/thread.h */
+
 

@@ -38,14 +38,12 @@
 
    - down or "P": wait for the value to become positive, then
      decrement it.
-
    - up or "V": increment the value (and wake up one waiting
      thread, if any). */
 void
 sema_init (struct semaphore *sema, unsigned value) 
 {
   ASSERT (sema != NULL);
-
   sema->value = value;
   list_init (&sema->waiters);
 }
@@ -68,7 +66,7 @@ sema_down (struct semaphore *sema)
   old_level = intr_disable ();
   while (sema->value == 0) 
     {
-      list_push_back (&sema->waiters, &thread_current ()->elem);
+      list_insert_ordered (&sema->waiters, &thread_current ()->elem,compare,NULL);
       thread_block ();
     }
   sema->value--;
@@ -190,7 +188,6 @@ void
 lock_init (struct lock *lock)
 {
   ASSERT (lock != NULL);
-
   lock->holder = NULL;
   sema_init (&lock->semaphore, 1);
   lock->priority_lock = PRIORITY_FAKE;
@@ -199,12 +196,10 @@ lock_init (struct lock *lock)
 /* Acquires LOCK, sleeping until it becomes available if
    necessary.  The lock must not already be held by the current
    thread.
-
    This function may sleep, so it must not be called within an
    interrupt handler.  This function may be called with
    interrupts disabled, but interrupts will be turned back on if
    we need to sleep. */
-
 void
 lock_acquire (struct lock *lock)
 {
@@ -217,11 +212,10 @@ lock_acquire (struct lock *lock)
   struct lock *lock_next;
   int lock_iter;
 
-
   enum intr_level old_level;
   old_level = intr_disable();
   cur = thread_current();
-  lock_holder = lock->holder;//*
+  lock_holder = lock->holder;
   lock_next = lock;
   lock_iter = 0;
 
@@ -246,7 +240,7 @@ lock_acquire (struct lock *lock)
         {
           lock_next = lock_holder->lock_blocked_by;
           lock_holder = lock_holder->lock_blocked_by->holder;
-          lock_iter ++;
+          lock_iter++;
         }
       else
         break;
@@ -273,6 +267,7 @@ lock_acquire (struct lock *lock)
    on failure.  The lock must not already be held by the current
    thread.
 
+
    This function will not sleep, so it may be called within an
    interrupt handler. */
 bool
@@ -284,6 +279,7 @@ lock_try_acquire (struct lock *lock)
   ASSERT (!lock_held_by_current_thread (lock));
 
   success = sema_try_down (&lock->semaphore);
+
   if (success)
     lock->holder = thread_current ();
   return success;
@@ -351,6 +347,7 @@ lock_release (struct lock *lock)
 /* Returns true if the current thread holds LOCK, false
    otherwise.  (Note that testing whether some other thread holds
    a lock would be racy.) */
+
 bool
 lock_held_by_current_thread (const struct lock *lock) 
 {
@@ -361,6 +358,7 @@ lock_held_by_current_thread (const struct lock *lock)
 
 /* One semaphore in a list. */
 struct semaphore_elem 
+
   {
     struct list_elem elem;              /* List element. */
     struct semaphore semaphore;         /* This semaphore. */
