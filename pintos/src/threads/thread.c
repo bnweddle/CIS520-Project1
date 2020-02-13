@@ -144,6 +144,60 @@ thread_set_next_wakeup(void)
    intr_set_level(old_level);
 }
 
+void
+thread_given_set_priority (struct thread *cur, int new_priority,
+                           bool is_donated)
+{
+  enum intr_level old_level;
+  old_level = intr_disable();
+
+  ASSERT (new_priority >= PRI_MIN && new_priority <= PRI_MAX);
+  ASSERT (is_thread (cur));
+
+   /* if this operation is a not donatation
+    *   if the thread has been donated and the new priority is less 
+    *   or equal to the donated priority, we should delay the process
+    *   by preserve it in priority_original.
+    * otherwise, just do the donation, set priority to the donated
+    * priority, and mark the thread as a donated one.
+    */ 
+   if (!is_donated) 
+     {
+       if (cur->is_donated && new_priority <= cur->priority) 
+          cur->stored_priority = new_priority;
+       else
+          cur->priority = cur->stored_priority = new_priority;
+     }
+   else 
+     {
+        cur->priority = new_priority;
+        cur->is_donated = true;
+     }
+
+
+  /* If the current thread's status is THREAD_READY, then just reinsert it
+   * to the ready_list in order to keep the ready_list in order; if its status
+   * is THREAD_RUNNING, then compare its priority with the largest one's
+   * priority in the ready_list: if the current one's is smaller, then yields
+   * the CPU.
+   */
+  if (cur->status == THREAD_READY)
+    {
+      list_remove (&cur->elem);
+      list_insert_ordered (&ready_list, &cur->elem, compare, NULL);
+    }
+  else if (cur->status == THREAD_RUNNING &&
+           list_entry (list_begin (&ready_list),
+                       struct thread,
+                       elem
+                       )->priority > cur->priority
+           )
+    {
+      thread_yield_current (cur);
+    }
+  intr_set_level (old_level);
+}
+
 /* Initializes the threading system by transforming the code
    that's currently running into a thread.  This can't work in
    general and it is possible in this case only because loader.S
